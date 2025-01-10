@@ -1,0 +1,2 @@
+# Tradingview
+pinecone indicator scripts
