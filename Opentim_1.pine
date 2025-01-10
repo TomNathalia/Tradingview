@@ -1,0 +1,77 @@
+//@version=5
+
+indicator("opentime",  shorttitle="OPENTIME", overlay=true)
+
+import PineCoders/VisibleChart/3 as ch
+
+var lines = array.new_line()
+var labels = array.new_label()
+var barnum = 0
+var _low = low
+var _high = high
+
+// Get the current date and time
+var int _year = year(timenow)
+var int _month = month(timenow)
+var int _day = dayofmonth(timenow)
+var int _hour = hour(timenow)
+var int _minute = minute(timenow)
+
+RoundToTens(value) =>
+    math.round(value *100 ) /100
+    
+// Multiply current hour value by 60 to get minutes in session  3 * 60 =  180
+var int _hourMultiplied = _hour * 60
+
+// Add minutes in current session  180 +  50 = 230
+var int _minuteInSession = _hourMultiplied + _minute
+
+// Substract to get the previous hour 230 - 60 = 70
+var int my_var1 = _minuteInSession - 60  
+
+// Get the current timeframe in minutes
+var int my_var2 = na
+
+if (timeframe.period == "60")
+    my_var2 := 60
+
+// Minutes to bars on interval  170 / 5 = 34 
+var int my_var3 = math.floor(my_var1 / my_var2)
+
+
+if session.isfirstbar
+    barnum := bar_index
+if barstate.isconfirmed and bar_index == barnum + my_var3
+    _low := low
+    _high := high
+
+if barstate.isconfirmed and bar_index == barnum + my_var3
+    _low := math.min(low, _low)
+    _high := math.max(high, _high)
+
+rightmost_bar = ch.rightBarIndex()
+
+var _diff = RoundToTens(((high - low) / high) *100)
+
+// clear labels
+for lb in labels
+    label.delete(lb)
+    
+// clear lines
+for ln in lines
+    line.delete(ln)
+
+array.clear(lines)
+array.clear(labels)
+
+array.push(lines, line.new(bar_index - 1, _low, bar_index, _low, style=line.style_solid, extend=extend.both, color=color.new(#8f9197, 1), width=1))
+array.push(labels, label.new(rightmost_bar - 1, _low, text="Low: " + str.tostring(_low), color=color.new(#F5F5EC,1), style=label.style_label_upper_right, textalign=text.align_right))
+
+array.push(lines, line.new(bar_index - 1, _high, bar_index, _high, style=line.style_solid, extend=extend.both, color=color.new(#8f9197, 1), width=1))
+array.push(labels, label.new(rightmost_bar - 1, _high, text="High: " + str.tostring(_high), color=color.new(#F5F5EC,1), style=label.style_label_upper_right, textalign=text.align_right))
+
+array.push(lines, line.new(bar_index - 1, _high, bar_index, _high, style=line.style_solid, extend=extend.both, color=color.new(#8f9197, 2), width=1))
+array.push(labels, label.new(rightmost_bar + 10, _high, text="%: " + str.tostring(_diff), color=color.new(#F5F5EC,1), style=label.style_label_upper_right, textalign=text.align_right))
+     
+
+
