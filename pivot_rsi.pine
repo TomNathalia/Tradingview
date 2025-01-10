@@ -1,0 +1,66 @@
+//@version=5
+indicator("RSI Pivot Detection (Peaks and Lows)", overlay=false)
+
+// Input parameters
+rsiPeriod = input.int(14, title="RSI Period")  // RSI Period
+lookBack = input.int(5, title="Bars to Lookback for Lower RSI")  // Number of bars to look back for confirming a low
+
+// Calculate RSI
+rsi = ta.rsi(close, rsiPeriod)
+
+// Track RSI values and bar indices for detecting pivots
+var float lowRSI = na
+var int lowBarIndex = na
+var bool labelCreatedLow = false
+
+var float highRSI = na
+var int highBarIndex = na
+var bool labelCreatedHigh = false
+
+// Condition for detecting a pivot low: the current RSI is lower than the previous and next RSI
+isLowCondition = (rsi < rsi[1]) and (rsi < ta.valuewhen(rsi < rsi[1], rsi, 1))  // Ensure we're comparing previous values
+
+// Condition for detecting a pivot high: the current RSI is higher than the previous and next RSI
+isHighCondition = (rsi > rsi[1]) and (rsi > ta.valuewhen(rsi > rsi[1], rsi, 1))  // Ensure we're comparing previous values
+
+// Confirm the pivot low when the next RSI is higher (indicating a rise after the low)
+isPivotLowConfirmed = not na(lowRSI) and rsi > lowRSI and bar_index > lowBarIndex
+
+// Confirm the pivot high when the next RSI is lower (indicating a fall after the high)
+isPivotHighConfirmed = not na(highRSI) and rsi < highRSI and bar_index > highBarIndex
+
+// Logic to label the pivot low when the RSI starts to rise after being lower
+if (isLowCondition)
+    // Save the current RSI value and bar index as a potential low
+    lowRSI := rsi
+    lowBarIndex := bar_index
+    labelCreatedLow := false  // Reset the labelCreated flag when a new low is found
+
+else if (isPivotLowConfirmed and not labelCreatedLow)
+    // Determine the color for the low label based on the RSI value
+    lowColor = rsi < 30 ? color.red : (rsi > 30 ? color.orange : na)
+    // Place the label one bar to the left of the pivot low with rounded RSI value to 1 decimal
+    label.new(bar_index - 1, lowRSI, str.tostring(lowRSI, "#.0"), color=lowColor, style=label.style_label_up, textcolor=color.white, size=size.small)
+    labelCreatedLow := true  // Mark that a label has been created
+
+// Logic to label the pivot high when the RSI starts to fall after being higher
+if (isHighCondition)
+    // Save the current RSI value and bar index as a potential high
+    highRSI := rsi
+    highBarIndex := bar_index
+    labelCreatedHigh := false  // Reset the labelCreated flag when a new high is found
+
+else if (isPivotHighConfirmed and not labelCreatedHigh)
+    // Determine the color for the high label based on the RSI value
+    highColor = rsi > 70 ? color.green : (rsi < 70 ? color.yellow : na)
+    // Place the label one bar to the left of the pivot high with rounded RSI value to 1 decimal
+    label.new(bar_index - 1, highRSI, str.tostring(highRSI, "#.0"), color=highColor, style=label.style_label_down, textcolor=color.black, size=size.small)
+    labelCreatedHigh := true  // Mark that a label has been created
+
+// Plot the RSI line for reference
+plot(rsi, title="RSI", color=color.blue, linewidth=2)
+
+// Add dashed lines at RSI 70, 50, and 30
+hline(70, "RSI 70", color=color.red, linestyle=hline.style_dashed, linewidth=1)
+hline(50, "RSI 50", color=color.gray, linestyle=hline.style_dashed, linewidth=1)
+hline(30, "RSI 30", color=color.green, linestyle=hline.style_dashed, linewidth=1)

@@ -1,0 +1,113 @@
+//@version=5
+indicator("opentime", shorttitle="OPENTIME", overlay=true)
+
+import PineCoders/VisibleChart/3 as ch
+
+var lines = array.new_line()
+var labels = array.new_label()
+var barnum = 0
+var _low = low
+var _high = high
+
+// Get the current date and time
+var int _year = year(timenow)
+var int _month = month(timenow)
+var int _day = dayofmonth(timenow)
+var int _hour = hour(timenow)
+var int _minute = minute(timenow)
+
+RoundToTens(value) =>
+    math.round(value * 100) / 100
+    
+// Multiply current hour value by 60 to get minutes in session  3 * 60 =  180
+var int _hourMultiplied = _hour * 60
+
+// Add minutes in current session  180 +  50 = 230
+var int _minuteInSession = _hourMultiplied + _minute
+
+// Substract to get the previous hour 230 - 60 = 70
+var int my_var1 = _minuteInSession - 60  
+
+// Get the current timeframe in minutes
+var int my_var2 = na
+
+if (timeframe.period == "60")
+    my_var2 := 60
+
+// Minutes to bars on interval  170 / 5 = 34 
+var int my_var3 = math.floor(my_var1 / my_var2)
+
+if session.isfirstbar
+    barnum := bar_index
+if barstate.isconfirmed and bar_index == barnum + my_var3
+    _low := low
+    _high := high
+
+if barstate.isconfirmed and bar_index == barnum + my_var3
+    _low := math.min(low, _low)
+    _high := math.max(high, _high)
+
+rightmost_bar = ch.rightBarIndex()
+
+var _diff = RoundToTens(((high - low) / high) * 100)
+
+// clear labels
+for lb in labels
+    label.delete(lb)
+    
+// clear lines
+for ln in lines
+    line.delete(ln)
+
+// Calculate MACD values
+[macd_line, signal_line, _] = ta.macd(close, 12, 26, 9) // Default MACD settings: 12, 26, 9
+
+// Format MACD line value to 2 decimal places
+formatted_macd = str.tostring(math.round(macd_line * 100) / 100)
+
+// Format MACD signal line value to 2 decimal places
+formatted_signal_line = str.tostring(math.round(signal_line * 100) / 100)
+
+// Existing % calculation
+_macd = RoundToTens(((high - low) / high) * 100)
+
+// Track the last crossing bar index
+var int last_cross_bar = na
+var string last_cross_type = ""
+
+// Check for crossover or crossunder
+if ta.crossover(macd_line, signal_line)
+    last_cross_bar := bar_index
+    last_cross_type := "Crossover"
+else if ta.crossunder(macd_line, signal_line)
+    last_cross_bar := bar_index
+    last_cross_type := "Crossunder"
+
+// Format the last crossing bar index
+string last_cross_info = na
+if not na(last_cross_bar)
+    last_cross_info := last_cross_type + " @ bar " + str.tostring(last_cross_bar)
+
+
+// Variables to store the MACD value at the last crossing
+var float macd_value_at_cross = na
+
+// Detect crossings and store MACD value
+if ta.crossover(macd_line, signal_line)
+    last_cross_bar := bar_index
+    last_cross_type := "Crossover"
+    macd_value_at_cross := macd_line // Store MACD value at the crossover
+else if ta.crossunder(macd_line, signal_line)
+    last_cross_bar := bar_index
+    last_cross_type := "Crossunder"
+    macd_value_at_cross := macd_line // Store MACD value at the crossunder
+
+// Format the MACD value at the crossing
+string last_cross_macd_info = not na(macd_value_at_cross) ? last_cross_type + " @ MACD: " + str.tostring(math.round(macd_value_at_cross * 100) / 100) : "N/A"
+
+// Clear any existing lines and labels
+array.clear(lines)
+array.clear(labels)
+
+// Add the MACD value at the crossing label
+array.push(labels, label.new(x=rightmost_bar + 100, y=_high, text="Last Crossing: " + last_cross_macd_info, color=color.new(#F5F5EC, 1), style=label.style_label_upper_right, textalign=text.align_right))

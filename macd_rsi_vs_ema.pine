@@ -1,0 +1,30 @@
+//@version=5
+indicator("MACD,RSI trend vs EMA50/EMA200)", overlay=true)
+
+// Calculate MACD values
+[macdLine, macdSignal, _] = ta.macd(close, 12, 26, 9)
+
+// Calculate RSI
+rsiValue = ta.rsi(close, 14)
+
+// Calculate EMA50 and EMA200
+ema50 = ta.ema(close, 50)
+ema200 = ta.ema(close, 200)
+
+// Determine background color based on conditions
+var color bgColor = na // Initialize bgColor as a color variable
+
+// Conditions for background color
+if macdLine > 0 and macdLine > macdSignal and rsiValue > 50 and close > ema200
+    bgColor := color.new(color.yellow, 85)  // Dark blue
+else if macdLine < 0 and macdLine < macdSignal and rsiValue < 50 and close < ema200
+    bgColor := color.new(color.red, 85)  // Light yellow
+else if macdLine > 0 and macdLine > macdSignal and rsiValue > 50 and close > ema50
+    bgColor := color.new(color.silver, 85)  // Light blue
+else if macdLine < 0 and macdLine < macdSignal and rsiValue < 50 and close < ema50
+    bgColor := color.new(color.blue, 85)  // Light gray
+else
+    bgColor := na // Clear background when conditions are not met
+
+// Draw a background rectangle based on conditions with 85% opacity
+bgcolor(bgColor, transp=85)

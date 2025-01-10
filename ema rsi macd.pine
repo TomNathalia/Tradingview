@@ -1,0 +1,103 @@
+//@version=5
+indicator("MACD & RSI Table", shorttitle="MACD & RSI", overlay=true)
+
+// Function to determine if the price is above or below EMA for a given timeframe
+is_above_ema(src, length, tf) =>
+    ema_value = request.security(syminfo.tickerid, tf, ta.ema(src, length))
+    close > ema_value ? "Above" : "Below"
+
+// Check EMA 200 status and RSI for different timeframes
+ema_1m = is_above_ema(close, 200, "1")
+ema_3m = is_above_ema(close, 200, "3")
+ema_5m = is_above_ema(close, 200, "5")
+ema_15m = is_above_ema(close, 200, "15")
+ema_1h = is_above_ema(close, 200, "60")
+ema_4h = is_above_ema(close, 200, "240")
+ema_1d = is_above_ema(close, 200, "D")
+
+// Function to determine if the MACD line is above or below the Signal line for a given timeframe
+is_macd_above_signal(src, fast_length, slow_length, signal_length, tf) =>
+    [macd, signal, _] = request.security(syminfo.tickerid, tf, ta.macd(src, fast_length, slow_length, signal_length))
+    [macd, signal, macd > signal ? "Above" : "Below"]
+
+// Function to calculate RSI for a given timeframe
+get_rsi(src, length, tf) =>
+    request.security(syminfo.tickerid, tf, ta.rsi(src, length))
+
+// Helper function to set MACD cell color based on the value and status
+get_macd_color(macd, status) => macd < 0 and status == "Above" ? color.new(#00FF00, 0) : macd > 0 and status == "Below" ? color.new(#FF4C4C, 0) :color.new(color.gray, 85)
+
+// Check MACD status and RSI for different timeframes
+[macd_1m, signal_1m, status_1m] = is_macd_above_signal(close, 12, 26, 9, "1")
+[macd_3m, signal_3m, status_3m] = is_macd_above_signal(close, 12, 26, 9, "3")
+[macd_5m, signal_5m, status_5m] = is_macd_above_signal(close, 12, 26, 9, "5")
+[macd_15m, signal_15m, status_15m] = is_macd_above_signal(close, 12, 26, 9, "15")
+[macd_1h, signal_1h, status_1h] = is_macd_above_signal(close, 12, 26, 9, "60")
+[macd_4h, signal_4h, status_4h] = is_macd_above_signal(close, 12, 26, 9, "240")
+[macd_1d, signal_1d, status_1d] = is_macd_above_signal(close, 12, 26, 9, "D")
+
+rsi_1m = get_rsi(close, 14, "1")
+rsi_3m = get_rsi(close, 14, "3")
+rsi_5m = get_rsi(close, 14, "5")
+rsi_15m = get_rsi(close, 14, "15")
+rsi_1h = get_rsi(close, 14, "60")
+rsi_4h = get_rsi(close, 14, "240")
+rsi_1d = get_rsi(close, 14, "D")
+
+// Helper function to set RSI cell color
+get_rsi_color(rsi) =>
+    rsi > 75 ? color.new(#FF4C4C, 0) : rsi < 25 ? color.new(#00FF00, 0) : color.new(color.gray, 85)
+
+// Create the table
+var table macd_table = table.new(position.bottom_right, 5, 8, bgcolor=color.new(color.gray, 90))
+
+// Populate the table header
+if bar_index == 0
+    table.cell(macd_table, 0, 0, text="Time", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 1, 0, text="MACD", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 2, 0, text="Value", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 3, 0, text="RSI", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 4, 0, text="EMA200", bgcolor=color.new(color.blue, 85), text_color=color.white)
+
+// Populate the table with timeframe labels, MACD statuses, MACD values, and RSI values
+table.cell(macd_table, 0, 1, text="1m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 1, text=status_1m, bgcolor=status_1m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_1m == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 1, text=str.tostring(macd_1m, format.mintick), bgcolor=get_macd_color(macd_1m, status_1m), text_color=(macd_1m < 0 and status_1m == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 1, text=str.tostring(rsi_1m, format.mintick), bgcolor=get_rsi_color(rsi_1m), text_color=color.white)
+table.cell(macd_table, 4, 1, text=ema_1m, bgcolor=ema_1m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_1m == "Above" ? color.black : color.white)
+
+table.cell(macd_table, 0, 2, text="3m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 2, text=status_3m, bgcolor=status_3m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_3m == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 2, text=str.tostring(macd_3m, format.mintick), bgcolor=get_macd_color(macd_3m, status_3m), text_color=(macd_3m < 0 and status_3m == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 2, text=str.tostring(rsi_3m, format.mintick), bgcolor=get_rsi_color(rsi_3m), text_color=color.white)
+table.cell(macd_table, 4, 2, text=ema_3m, bgcolor=ema_3m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_3m == "Above" ? color.black : color.white)
+
+table.cell(macd_table, 0, 3, text="5m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 3, text=status_5m, bgcolor=status_5m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_5m == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 3, text=str.tostring(macd_5m, format.mintick), bgcolor=get_macd_color(macd_5m, status_5m), text_color=(macd_5m < 0 and status_5m == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 3, text=str.tostring(rsi_5m, format.mintick), bgcolor=get_rsi_color(rsi_5m), text_color=color.white)
+table.cell(macd_table, 4, 3, text=ema_5m, bgcolor=ema_5m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_5m == "Above" ? color.black : color.white)
+
+table.cell(macd_table, 0, 4, text="15m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 4, text=status_15m, bgcolor=status_15m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_15m == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 4, text=str.tostring(macd_15m, format.mintick), bgcolor=get_macd_color(macd_15m, status_15m), text_color=(macd_15m < 0 and status_15m == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 4, text=str.tostring(rsi_15m, format.mintick), bgcolor=get_rsi_color(rsi_15m), text_color=color.white)
+table.cell(macd_table, 4, 4, text=ema_15m, bgcolor=ema_15m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_15m == "Above" ? color.black : color.white)
+
+table.cell(macd_table, 0, 5, text="1h", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 5, text=status_1h, bgcolor=status_1h == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_1h == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 5, text=str.tostring(macd_1h, format.mintick), bgcolor=get_macd_color(macd_1h, status_1h), text_color=(macd_1h < 0 and status_1h == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 5, text=str.tostring(rsi_1h, format.mintick), bgcolor=get_rsi_color(rsi_1h), text_color=color.white)
+table.cell(macd_table, 4, 5, text=ema_1h, bgcolor=ema_1h == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_1h == "Above" ? color.black : color.white)
+
+table.cell(macd_table, 0, 6, text="4h", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 6, text=status_4h, bgcolor=status_4h == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_4h == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 6, text=str.tostring(macd_4h, format.mintick), bgcolor=get_macd_color(macd_4h, status_4h), text_color=(macd_4h < 0 and status_4h == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 6, text=str.tostring(rsi_4h, format.mintick), bgcolor=get_rsi_color(rsi_4h), text_color=color.white)
+table.cell(macd_table, 4, 6, text=ema_4h, bgcolor=ema_4h == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_4h == "Above" ? color.black : color.white)
+
+table.cell(macd_table, 0, 7, text="1d", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 7, text=status_1d, bgcolor=status_1d == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_1d == "Above" ? color.black : color.white)
+table.cell(macd_table, 2, 7, text=str.tostring(macd_1d, format.mintick), bgcolor=get_macd_color(macd_1d, status_1d), text_color=(macd_1d < 0 and status_1d == "Above") ? color.black : color.white)
+table.cell(macd_table, 3, 7, text=str.tostring(rsi_1d, format.mintick), bgcolor=get_rsi_color(rsi_1d), text_color=color.white)
+table.cell(macd_table, 4, 7, text=ema_1d, bgcolor=ema_1d == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=ema_1d == "Above" ? color.black : color.white)

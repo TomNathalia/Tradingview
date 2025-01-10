@@ -1,0 +1,89 @@
+//@version=5
+indicator("MACD Custom", overlay=false)
+
+// MACD Settings
+fastLength = input.int(12, title="Fast EMA Length")
+slowLength = input.int(26, title="Slow EMA Length")
+signalSmoothing = input.int(9, title="Signal Smoothing")
+
+// MACD Calculation for different timeframes using request.security
+[macdLine1m, signalLine1m, _] = request.security(syminfo.tickerid, "1", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine5m, signalLine5m, _] = request.security(syminfo.tickerid, "5", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine15m, signalLine15m, _] = request.security(syminfo.tickerid, "15", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine30m, signalLine30m, _] = request.security(syminfo.tickerid, "30", ta.macd(close, fastLength, slowLength, signalSmoothing))
+
+// MACD Colors for timeframes
+macdColor1m = color.white
+signalColor1m = color.silver
+
+macdColor5m = color.blue
+signalColor5m = color.purple
+
+macdColor15m = color.yellow
+signalColor15m = color.orange
+
+macdColor30m = color.red
+signalColor30m = color.maroon
+
+// Conditions for MACD crossovers
+triggerCondition1mUp = ta.crossover(macdLine1m, signalLine1m) and macdLine1m < 0
+triggerCondition5mUp = ta.crossover(macdLine5m, signalLine5m) and macdLine5m < 0
+triggerCondition15mUp = ta.crossover(macdLine15m, signalLine15m) and macdLine15m < 0
+triggerCondition30mUp = ta.crossover(macdLine30m, signalLine30m) and macdLine30m < 0
+
+triggerCondition1mDown = ta.crossunder(macdLine1m, signalLine1m)
+triggerCondition5mDown = ta.crossunder(macdLine5m, signalLine5m)
+triggerCondition15mDown = ta.crossunder(macdLine15m, signalLine15m)
+triggerCondition30mDown = ta.crossunder(macdLine30m, signalLine30m)
+
+// Plot MACD for 1m, 5m, 15m, and 30m
+plot(macdLine1m, color=macdColor1m, title="MACD Line 1m")
+plot(signalLine1m, color=signalColor1m, title="Signal Line 1m")
+
+plot(macdLine5m, color=macdColor5m, title="MACD Line 5m")
+plot(signalLine5m, color=signalColor5m, title="Signal Line 5m")
+
+plot(macdLine15m, color=macdColor15m, title="MACD Line 15m")
+plot(signalLine15m, color=signalColor15m, title="Signal Line 15m")
+
+plot(macdLine30m, color=macdColor30m, title="MACD Line 30m")
+plot(signalLine30m, color=signalColor30m, title="Signal Line 30m")
+
+// Add dashed line at the 0 mark
+hline(0, "Zero Line", color=color.gray, linestyle=hline.style_dashed, linewidth=1)
+
+// Dynamic labels with colors for MACD and Signal crossovers
+if (triggerCondition1mUp)
+    label.new(bar_index, macdLine1m, str.tostring(math.round(macdLine1m)), style=label.style_label_down, textcolor=color.black, color=macdColor1m)
+
+if (triggerCondition1mDown)
+    label.new(bar_index, macdLine1m, str.tostring(math.round(macdLine1m)), style=label.style_label_down, textcolor=color.black, color=signalColor1m)
+
+if (triggerCondition5mUp)
+    label.new(bar_index, macdLine5m, str.tostring(math.round(macdLine5m)), style=label.style_label_down, textcolor=color.white, color=macdColor5m)
+
+if (triggerCondition5mDown)
+    label.new(bar_index, macdLine5m, str.tostring(math.round(macdLine5m)), style=label.style_label_down, textcolor=color.white, color=signalColor5m)
+
+if (triggerCondition15mUp)
+    label.new(bar_index, macdLine15m, str.tostring(math.round(macdLine15m)), style=label.style_label_down, textcolor=color.black, color=macdColor15m)
+
+if (triggerCondition15mDown)
+    label.new(bar_index, macdLine15m, str.tostring(math.round(macdLine15m)), style=label.style_label_down, textcolor=color.white, color=signalColor15m)
+
+if (triggerCondition30mUp)
+    label.new(bar_index, macdLine30m, str.tostring(math.round(macdLine30m)), style=label.style_label_down, textcolor=color.white, color=macdColor30m)
+
+if (triggerCondition30mDown)
+    label.new(bar_index, macdLine30m, str.tostring(math.round(macdLine30m)), style=label.style_label_down, textcolor=color.white, color=signalColor30m)
+
+// Alert Conditions
+alertcondition(triggerCondition1mUp, title="MACD Cross Up (1m)", message="MACD crossed up Signal Line (1m)")
+alertcondition(triggerCondition5mUp, title="MACD Cross Up (5m)", message="MACD crossed up Signal Line (5m)")
+alertcondition(triggerCondition15mUp, title="MACD Cross Up (15m)", message="MACD crossed up Signal Line (15m)")
+alertcondition(triggerCondition30mUp, title="MACD Cross Up (30m)", message="MACD crossed up Signal Line (30m)")
+
+alertcondition(triggerCondition1mDown, title="MACD Cross Down (1m)", message="MACD crossed down Signal Line (1m)")
+alertcondition(triggerCondition5mDown, title="MACD Cross Down (5m)", message="MACD crossed down Signal Line (5m)")
+alertcondition(triggerCondition15mDown, title="MACD Cross Down (15m)", message="MACD crossed down Signal Line (15m)")
+alertcondition(triggerCondition30mDown, title="MACD Cross Down (30m)", message="MACD crossed down Signal Line (30m)")

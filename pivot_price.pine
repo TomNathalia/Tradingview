@@ -1,0 +1,63 @@
+//@version=5
+indicator("Price Pivot Detection (Peaks and Lows)", overlay=true)
+
+// Input parameters
+rsiPeriod = input.int(14, title="RSI Period")  // RSI Period
+
+// Calculate RSI
+rsi = ta.rsi(close, rsiPeriod)
+
+// Track price values for detecting pivots
+var float lowPrice = na
+var float highPrice = na
+var bool labelCreatedLowPrice = false
+var bool labelCreatedHighPrice = false
+
+// Variables to track previous highs and lows
+var float previousHighPrice = na
+var float previousLowPrice = na
+
+// Deuteranopia-friendly colors
+colorHigherHigh = color.new(#32CD32 , 0)  // Lime Green
+colorLowerHigh = color.yellow // Gold
+colorHigherLow = color.new(#B22222 , 0)  // LOrange B22222
+colorLowerLow = color.new(#FFA500 , 0)   // Firebrick Red
+
+// Function to determine decimal formatting based on price level
+getFormattedPrice(price) =>
+    price < 10 ? str.tostring(price, "#.###") : price < 100 ? str.tostring(price, "#.##") : str.tostring(price, "#.1")
+
+// Detect pivot low for price (final low in a sequence)
+isLowPriceCondition = (low < low[1]) and (low[1] < low[2])
+
+if isLowPriceCondition
+    lowPrice := low
+    labelCreatedLowPrice := false  // Reset label flag
+else if not isLowPriceCondition and not labelCreatedLowPrice and not na(lowPrice)
+    // Determine label background color based on comparison with the previous low
+    labelColor = not na(previousLowPrice) and lowPrice < previousLowPrice ? colorHigherLow : colorLowerLow
+
+    // Update the previous low price
+    previousLowPrice := lowPrice
+
+    // Place label one bar to the left of the final low in the sequence
+    label.new(bar_index - 1, lowPrice, getFormattedPrice(lowPrice), style=label.style_label_up, color=labelColor, textcolor=color.white)
+    labelCreatedLowPrice := true  // Mark label as created
+
+// Detect pivot high for price (final high in a sequence)
+isHighPriceCondition = (high > high[1]) and (high[1] > high[2])
+
+if isHighPriceCondition
+    highPrice := high
+    labelCreatedHighPrice := false  // Reset label flag
+else if not isHighPriceCondition and not labelCreatedHighPrice and not na(highPrice)
+    // Determine label background color based on comparison with the previous high
+    labelColor = not na(previousHighPrice) and highPrice > previousHighPrice ? colorHigherHigh : colorLowerHigh
+
+    // Update the previous high price
+    previousHighPrice := highPrice
+
+    // Place label one bar to the left of the final high in the sequence
+    label.new(bar_index - 1, highPrice, getFormattedPrice(highPrice), style=label.style_label_down, color=labelColor, textcolor=color.black)
+    labelCreatedHighPrice := true  // Mark label as created
+

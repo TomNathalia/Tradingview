@@ -1,0 +1,35 @@
+//@version=5
+indicator("MACD Crossovers", overlay=true)
+
+// Input parameters for MACD
+fastLength = input(12, title="Fast EMA Length")
+slowLength = input(26, title="Slow EMA Length")
+signalLength = input(9, title="Signal Length")
+
+// MACD Calculation
+[macdLine, signalLine, _] = ta.macd(close, fastLength, slowLength, signalLength)
+
+// Conditions for Labels
+isGreen = macdLine > signalLine and macdLine > 0
+isYellow = macdLine > signalLine and macdLine < 0
+isRed = macdLine < signalLine and macdLine < 0
+isOrange = macdLine < signalLine and macdLine > 0
+
+// Remove consecutive duplicate labels
+showGreen = isGreen and (nz(isGreen[1]) != 1)
+showYellow = isYellow and (nz(isYellow[1]) != 1)
+showRed = isRed and (nz(isRed[1]) != 1)
+showOrange = isOrange and (nz(isOrange[1]) != 1)
+
+// Plot Labels with Appropriate Colors and MACD Value
+if showGreen
+    label.new(bar_index, low, str.tostring(macdLine, "#.##"), style=label.style_label_down, color=color.green, textcolor=color.white, size=size.normal)
+if showYellow
+    label.new(bar_index, low, str.tostring(macdLine, "#.##"), style=label.style_label_down, color=color.yellow, textcolor=color.black, size=size.normal)
+if showRed
+    label.new(bar_index, high, str.tostring(macdLine, "#.##"), style=label.style_label_up, color=color.red, textcolor=color.white, size=size.normal)
+if showOrange
+    label.new(bar_index, high, str.tostring(macdLine, "#.##"), style=label.style_label_up, color=color.orange, textcolor=color.white, size=size.normal)
+
+
+

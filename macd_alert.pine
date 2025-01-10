@@ -1,0 +1,51 @@
+//@version=5
+indicator("MACD Above Signal Alert for Multiple Timeframes with MACD Below Threshold", overlay=false)
+
+// MACD Settings
+fastLength = input.int(12, title="Fast EMA Length")
+slowLength = input.int(26, title="Slow EMA Length")
+signalSmoothing = input.int(9, title="Signal Smoothing")
+
+// MACD Calculation for different timeframes using request.security
+[macdLine1m, signalLine1m, _] = request.security(syminfo.tickerid, "1", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine5m, signalLine5m, _] = request.security(syminfo.tickerid, "5", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine15m, signalLine15m, _] = request.security(syminfo.tickerid, "15", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine30m, signalLine30m, _] = request.security(syminfo.tickerid, "30", ta.macd(close, fastLength, slowLength, signalSmoothing))
+
+// Conditions for the Alert on each timeframe (MACD crosses above Signal Line and MACD is below the threshold)
+triggerCondition1m = ta.crossover(macdLine1m, signalLine1m) and macdLine1m < 0
+triggerCondition5m = ta.crossover(macdLine5m, signalLine5m) and macdLine5m < 0
+triggerCondition15m = ta.crossover(macdLine15m, signalLine15m) and macdLine15m < 10000
+triggerCondition30m = ta.crossover(macdLine30m, signalLine30m) and macdLine30m < 10000
+
+// Plot MACD for 1m, 5m, 15m, and 1h
+plot(macdLine1m, color=color.white, title="MACD Line 1m")
+plot(signalLine1m, color=color.silver, title="Signal Line 1m")
+
+plot(macdLine5m, color=color.blue, title="MACD Line 5m")
+plot(signalLine5m, color=color.purple, title="Signal Line 5m")
+
+plot(macdLine15m, color=color.yellow, title="MACD Line 15m")
+plot(signalLine15m, color=color.orange, title="Signal Line 15m")
+
+plot(macdLine1h, color=color.red, title="MACD Line 30m")
+plot(signalLine1h, color=color.maroon, title="Signal Line 30m")
+
+// Add dashed line at the 0 mark
+hline(0, "Zero Line", color=color.gray, linestyle=hline.style_dashed, linewidth=1)
+
+// Create dynamic labels when the condition is triggered
+if (triggerCondition1m)
+    label.new(bar_index, macdLine1m, str.tostring(math.round(macdLine1m)), color=color.new(color.silver, 90), style=label.style_label_center, textcolor=color.white)
+if (triggerCondition5m)
+    label.new(bar_index, macdLine5m, str.tostring(math.round(macdLine5m)), color=color.new(color.blue, 90), style=label.style_label_center, textcolor=color.white)
+if (triggerCondition15m)
+    label.new(bar_index, macdLine15m, str.tostring(math.round(macdLine15m)), color=color.new(color.yellow, 90), style=label.style_label_center, textcolor=color.white)
+if (triggerCondition30m)
+    label.new(bar_index, macdLine30m, str.tostring(math.round(macdLine30m)), color=color.new(color.red, 90), style=label.style_label_center, textcolor=color.white)
+
+// Alert Conditions
+alertcondition(triggerCondition1m, title="MACD (1min)", message="MACD 1m")
+alertcondition(triggerCondition5m, title="MACD (5min)", message="MACD 5m")
+alertcondition(triggerCondition15m, title="MACD (15min)", message="MACD 15m ")
+alertcondition(triggerCondition30m, title="MACD (30min)", message="MACD 30m ")

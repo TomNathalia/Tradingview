@@ -1,0 +1,41 @@
+//@version=5
+indicator("MACD Above Signal Alert for Multiple Timeframes with MACD Below Threshold", overlay=false)
+
+// MACD Settings
+fastLength = input.int(12, title="Fast EMA Length")
+slowLength = input.int(26, title="Slow EMA Length")
+signalSmoothing = input.int(9, title="Signal Smoothing")
+
+// MACD Calculation for different timeframes using request.security
+[macdLine1m, signalLine1m, _] = request.security(syminfo.tickerid, "1", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine5m, signalLine5m, _] = request.security(syminfo.tickerid, "5", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine15m, signalLine15m, _] = request.security(syminfo.tickerid, "15", ta.macd(close, fastLength, slowLength, signalSmoothing))
+[macdLine1h, signalLine1h, _] = request.security(syminfo.tickerid, "60", ta.macd(close, fastLength, slowLength, signalSmoothing))
+
+// Conditions for the Alert on each timeframe (MACD crosses above Signal Line and MACD is below the threshold)
+triggerCondition1m = ta.crossover(macdLine1m, signalLine1m) and macdLine1m < -50
+triggerCondition5m = ta.crossover(macdLine5m, signalLine5m) and macdLine5m < -100
+triggerCondition15m = ta.crossover(macdLine15m, signalLine15m) and macdLine15m < -150
+triggerCondition1h = ta.crossover(macdLine1h, signalLine1h) and macdLine1h < -200
+
+// Plot MACD for 1m, 5m, 15m, and 1h
+plot(macdLine1m, color=color.blue, title="MACD Line 1m")
+plot(signalLine1m, color=color.yellow, title="Signal Line 1m")
+
+plot(macdLine5m, color=color.purple, title="MACD Line 5m")
+plot(signalLine5m, color=color.green, title="Signal Line 5m")
+
+plot(macdLine15m, color=color.black, title="MACD Line 15m")
+plot(signalLine15m, color=color.white, title="Signal Line 15m")
+
+plot(macdLine1h, color=color.red, title="MACD Line 1h")
+plot(signalLine1h, color=color.orange, title="Signal Line 1h")
+
+// Add dashed line at the 0 mark
+hline(0, "Zero Line", color=color.gray, linestyle=hline.style_dashed, linewidth=1)
+
+// Alert Conditions
+alertcondition(triggerCondition1m, title="MACD Cross Above Signal Alert (1min)", message="MACD crosses above Signal Line AND MACD < -50 on 1m timeframe.")
+alertcondition(triggerCondition5m, title="MACD Cross Above Signal Alert (5min)", message="MACD crosses above Signal Line AND MACD < -100 on 5m timeframe.")
+alertcondition(triggerCondition15m, title="MACD Cross Above Signal Alert (15min)", message="MACD crosses above Signal Line AND MACD < -150 on 15m timeframe.")
+alertcondition(triggerCondition1h, title="MACD Cross Above Signal Alert (1h)", message="MACD crosses above Signal Line AND MACD < -200 on 1h timeframe.")

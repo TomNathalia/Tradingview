@@ -1,0 +1,14 @@
+
+// Function to determine if the price is above or below EMA for a given timeframe
+is_above_ema(src, length, tf) =>
+    ema_value = request.security(syminfo.tickerid, tf, ta.ema(src, length))
+    close > ema_value ? "Above" : "Below"
+
+// Check EMA 200 status and RSI for different timeframes
+ema_1m = is_above_ema(close, 200, "1")
+ema_3m = is_above_ema(close, 200, "3")
+ema_5m = is_above_ema(close, 200, "5")
+ema_15m = is_above_ema(close, 200, "15")
+ema_1h = is_above_ema(close, 200, "60")
+ema_4h = is_above_ema(close, 200, "240")
+ema_1d = is_above_ema(close, 200, "D")

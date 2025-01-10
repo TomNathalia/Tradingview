@@ -1,0 +1,105 @@
+//@version=5
+indicator("EMA 200 & RSI Table", shorttitle="EMA 200 & RSI", overlay=true)
+
+// Helper function to round values to 2 decimal places
+RoundToTens(value) =>
+    math.round(value * 100) / 100
+
+// Function to determine if the price is above or below EMA for a given timeframe
+is_above_ema(src, length, tf) =>
+    ema_value = request.security(syminfo.tickerid, tf, ta.ema(src, length))
+    close > ema_value ? "Above" : "Below"
+
+// Check EMA 200 status, RSI and volatility for different timeframes
+status_1m = is_above_ema(close, 200, "1")
+status_3m = is_above_ema(close, 200, "3")
+status_5m = is_above_ema(close, 200, "5")
+status_15m = is_above_ema(close, 200, "15")
+status_1h = is_above_ema(close, 200, "60")
+status_4h = is_above_ema(close, 200, "240")
+status_1d = is_above_ema(close, 200, "D")
+
+// Function to calculate RSI for a given timeframe
+get_rsi(src, length, tf) =>
+    request.security(syminfo.tickerid, tf, ta.rsi(src, length))
+
+rsi_1m = get_rsi(close, 14, "1")
+rsi_3m = get_rsi(close, 14, "3")
+rsi_5m = get_rsi(close, 14, "5")
+rsi_15m = get_rsi(close, 14, "15")
+rsi_1h = get_rsi(close, 14, "60")
+rsi_4h = get_rsi(close, 14, "240")
+rsi_1d = get_rsi(close, 14, "D")
+
+
+// Function to calculate volatility (percentage difference between high and low) for a specific timeframe
+get_volatility(tf, 40) => // Change value for number of candles
+    // Use ta.highest() and ta.lowest() to find highest high and lowest low over the specified number of candles
+    highest_high = request.security(syminfo.tickerid, tf, ta.highest(high, num_candles))
+    lowest_low = request.security(syminfo.tickerid, tf, ta.lowest(low, num_candles))
+
+    // Calculate volatility as percentage difference between highest high and lowest low
+    vol_percentage = (highest_high - lowest_low) / lowest_low * 100
+
+    // Return the volatility
+    vol_percentage
+
+volatility_1m = get_volatility("1", 40)  // Calculate volatility based on the specified number of candles for 1 minute timeframe
+volatility_3m = get_volatility("3", 14)  // Calculate volatility based on the specified number of candles for 3 minute timeframe
+volatility_5m = get_volatility("5", 8)  // Calculate volatility based on the specified number of candles for 5 minute timeframe
+volatility_15m = get_volatility("15", 8)  // Calculate volatility based on the specified number of candles for 15 minute timeframe
+volatility_1h = get_volatility("60", 2)  // Calculate volatility based on the specified number of candles for 1 hour timeframe
+volatility_4h = get_volatility("240", 2)  // Calculate volatility based on the specified number of candles for 1 hour timeframe
+volatility_1d = get_volatility("D", 2)  // Calculate volatility based on the specified number of candles for 1 day timeframe
+
+
+// Create the table
+var table ema_table = table.new(position.bottom_right, 5, 8, bgcolor=color.new(color.gray, 90))
+
+// Populate the table header
+if bar_index == 0
+    table.cell(ema_table, 0, 0, text="Timeframe", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(ema_table, 1, 0, text="EMA 200", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(ema_table, 2, 0, text="RSI", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(ema_table, 3, 0, text="Volatility", bgcolor=color.new(color.blue, 85), text_color=color.white)
+
+// Helper function to set RSI cell color
+get_rsi_color(rsi) =>
+    rsi > 75 ? color.new(#FF4C4C, 0) : rsi < 25 ? color.new(#00FF00, 0) : color.new(color.gray, 85)
+
+// Populate the table with timeframe labels, EMA statuses, RSI values, and Volatility values
+
+table.cell(ema_table, 0, 1, text="1m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 1, text=status_1m, bgcolor=status_1m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_1m == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 1, text=str.tostring(rsi_1m, format.mintick), bgcolor=get_rsi_color(rsi_1m), text_color=color.white)
+table.cell(ema_table, 3, 1, text=not na(volatility_1m) ? str.tostring(RoundToTens(volatility_1m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(ema_table, 0, 2, text="3m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 2, text=status_3m, bgcolor=status_3m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_3m == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 2, text=str.tostring(rsi_3m, format.mintick), bgcolor=get_rsi_color(rsi_3m), text_color=color.white)
+table.cell(ema_table, 3, 2, text=not na(volatility_3m) ? str.tostring(RoundToTens(volatility_3m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(ema_table, 0, 3, text="5m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 3, text=status_5m, bgcolor=status_5m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_5m == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 3, text=str.tostring(rsi_5m, format.mintick), bgcolor=get_rsi_color(rsi_5m), text_color=color.white)
+table.cell(ema_table, 3, 3, text=not na(volatility_5m) ? str.tostring(RoundToTens(volatility_5m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(ema_table, 0, 4, text="15m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 4, text=status_15m, bgcolor=status_15m == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_15m == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 4, text=str.tostring(rsi_15m, format.mintick), bgcolor=get_rsi_color(rsi_15m), text_color=color.white)
+table.cell(ema_table, 3, 4, text=not na(volatility_15m) ? str.tostring(RoundToTens(volatility_15m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(ema_table, 0, 5, text="1h", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 5, text=status_1h, bgcolor=status_1h == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_1h == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 5, text=str.tostring(rsi_1h, format.mintick), bgcolor=get_rsi_color(rsi_1h), text_color=color.white)
+table.cell(ema_table, 3, 5, text=not na(volatility_1h) ? str.tostring(RoundToTens(volatility_1h)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(ema_table, 0, 6, text="4h", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 6, text=status_4h, bgcolor=status_4h == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_4h == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 6, text=str.tostring(rsi_4h, format.mintick), bgcolor=get_rsi_color(rsi_4h), text_color=color.white)
+table.cell(ema_table, 3, 6, text=not na(volatility_4h) ? str.tostring(RoundToTens(volatility_4h)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(ema_table, 0, 7, text="1d", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(ema_table, 1, 7, text=status_1d, bgcolor=status_1d == "Above" ? color.new(#00FF00, 0) : color.new(#FF4C4C, 0), text_color=status_1d == "Above" ? color.black : color.white)
+table.cell(ema_table, 2, 7, text=str.tostring(rsi_1d, format.mintick), bgcolor=get_rsi_color(rsi_1d), text_color=color.white)
+table.cell(ema_table, 3, 7, text=not na(volatility_1d) ? str.tostring(RoundToTens(volatility_1d)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)

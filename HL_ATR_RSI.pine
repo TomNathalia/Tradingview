@@ -1,0 +1,115 @@
+//@version=5
+indicator("MACD & RSI Table", shorttitle="MACD & RSI", overlay=true)
+
+// Helper function to round values to 2 decimal places
+RoundToTens(value) =>
+    math.round(value * 100) / 100
+
+// Helper function to round values to the nearest integer
+RoundToInteger(value) =>
+    math.round(value)
+
+// Function to calculate RSI for a given timeframe
+get_rsi(src, length, tf) =>
+    request.security(syminfo.tickerid, tf, ta.rsi(src, length))
+
+
+rsi_1m = get_rsi(close, 14, "1")
+rsi_3m = get_rsi(close, 14, "3")
+rsi_5m = get_rsi(close, 14, "5")
+rsi_15m = get_rsi(close, 14, "15")
+rsi_30m = get_rsi(close, 14, "30")
+rsi_1h = get_rsi(close, 14, "60")
+rsi_2h = get_rsi(close, 14, "120")
+
+// Helper function to set RSI cell color
+get_rsi_color(rsi) =>
+    rsi > 75 ? color.new(#FF4C4C, 0) : rsi < 25 ? color.new(#00FF00, 0) : color.new(color.gray, 85)
+
+// Function to calculate volatility as a percentage of ATR relative to the current price for a specific timeframe
+get_volatility_with_atr(tf, length) =>
+    // Request ATR from the specified timeframe
+    atr_value = request.security(syminfo.tickerid, tf, ta.atr(length))
+    
+    // Get the closing price for the specified timeframe
+    close_price = request.security(syminfo.tickerid, tf, close)
+    
+    // Calculate volatility as a percentage of ATR relative to the closing price
+    vol_percentage = (atr_value / close_price) * 100
+
+    // Return the volatility
+    vol_percentage
+
+// Calculate volatility using ATR for various timeframes
+volatility_1m = get_volatility_with_atr("1", 10)  // Calculate volatility for 1-minute timeframe
+volatility_3m = get_volatility_with_atr("3", 5)  // Calculate volatility for 3-minute timeframe
+volatility_5m = get_volatility_with_atr("5", 6)  // Calculate volatility for 5-minute timeframe
+volatility_15m = get_volatility_with_atr("15", 4)  // Calculate volatility for 15-minute timeframe
+volatility_30m = get_volatility_with_atr("30", 3)  // Calculate volatility for 1-hour timeframe
+volatility_1h = get_volatility_with_atr("60", 2)  // Calculate volatility for 4-hour timeframe
+volatility_2h = get_volatility_with_atr("120", 2)  // Calculate volatility for 1-day timeframe
+
+// Function to calculate the percentage difference between the highest and lowest values over a range
+get_high_low_percentage(tf, length) =>
+    high_val = request.security(syminfo.tickerid, tf, ta.highest(high, length))
+    low_val = request.security(syminfo.tickerid, tf, ta.lowest(low, length))
+    percent_diff = ((high_val - low_val) / low_val) * 100
+    percent_diff
+
+// Calculate high-low % difference for various timeframes
+high_low_1m = get_high_low_percentage("1", 10)      // 10 min
+high_low_3m = get_high_low_percentage("3", 5)       // 15 min
+high_low_5m = get_high_low_percentage("5", 6)       // 30 min
+high_low_15m = get_high_low_percentage("15", 4)     // 60 min
+high_low_30m = get_high_low_percentage("30",3)      // 90 min     
+high_low_1h = get_high_low_percentage("60", 2)      // 120 min
+high_low_2h = get_high_low_percentage("120", 2)     // 240 min
+
+
+// Create the table
+var table macd_table = table.new(position.bottom_right, 6, 8, bgcolor=color.new(color.gray, 90))
+
+// Populate the table header
+if bar_index == 0
+    table.cell(macd_table, 0, 0, text="Range", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 1, 0, text="RSI", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 2, 0, text="H/L %", bgcolor=color.new(color.blue, 85), text_color=color.white)
+    table.cell(macd_table, 3, 0, text="ATR %", bgcolor=color.new(color.blue, 85), text_color=color.white)
+
+
+// Populate the table with timeframe labels, MACD statuses, MACD values, and RSI values
+table.cell(macd_table, 0, 1, text="10m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 1, text=str.tostring(RoundToInteger(rsi_1m)), bgcolor=get_rsi_color(rsi_1m), text_color=color.white)
+table.cell(macd_table, 2, 1, text=not na(high_low_1m) ? str.tostring(RoundToTens(high_low_1m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 1, text=not na(volatility_1m) ? str.tostring(RoundToTens(volatility_1m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(macd_table, 0, 2, text="15m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 2, text=str.tostring(RoundToInteger(rsi_3m)), bgcolor=get_rsi_color(rsi_3m), text_color=color.white)
+table.cell(macd_table, 2, 2, text=not na(high_low_3m) ? str.tostring(RoundToTens(high_low_3m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 2, text=not na(volatility_3m) ? str.tostring(RoundToTens(volatility_3m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(macd_table, 0, 3, text="30m", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 3, text=str.tostring(RoundToInteger(rsi_5m)), bgcolor=get_rsi_color(rsi_5m), text_color=color.white)
+table.cell(macd_table, 2, 3, text=not na(high_low_5m) ? str.tostring(RoundToTens(high_low_5m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 3, text=not na(volatility_5m) ? str.tostring(RoundToTens(volatility_5m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(macd_table, 0, 4, text="1H", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 4, text=str.tostring(RoundToInteger(rsi_15m)), bgcolor=get_rsi_color(rsi_15m), text_color=color.white)
+table.cell(macd_table, 2, 4, text=not na(high_low_15m) ? str.tostring(RoundToTens(high_low_15m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 4, text=not na(volatility_15m) ? str.tostring(RoundToTens(volatility_15m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(macd_table, 0, 5, text="1.5H", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 5, text=str.tostring(RoundToInteger(rsi_30m)), bgcolor=get_rsi_color(rsi_30m), text_color=color.white)
+table.cell(macd_table, 2, 5, text=not na(high_low_30m) ? str.tostring(RoundToTens(high_low_30m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 5, text=not na(volatility_30m) ? str.tostring(RoundToTens(volatility_30m)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(macd_table, 0, 6, text="2H", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 6, text=str.tostring(RoundToInteger(rsi_1h)), bgcolor=get_rsi_color(rsi_1h), text_color=color.white)
+table.cell(macd_table, 2, 6, text=not na(high_low_1h) ? str.tostring(RoundToTens(high_low_1h)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 6, text=not na(volatility_1h) ? str.tostring(RoundToTens(volatility_1h)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
+table.cell(macd_table, 0, 7, text="4H", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 1, 7, text=str.tostring(RoundToInteger(rsi_2h)), bgcolor=get_rsi_color(rsi_2h), text_color=color.white)
+table.cell(macd_table, 2, 7, text=not na(high_low_2h) ? str.tostring(RoundToTens(high_low_2h)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+table.cell(macd_table, 3, 7, text=not na(volatility_2h) ? str.tostring(RoundToTens(volatility_2h)) + "%" : "N/A", bgcolor=color.new(color.gray, 85), text_color=color.white)
+
